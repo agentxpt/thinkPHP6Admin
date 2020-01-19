@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {include file="public/_meta" /}
+</head>
+<body>
+
+<nav class="breadcrumb">
+    <i class="Hui-iconfont">&#xe67f;</i> 首页
+    <span class="c-gray en">&gt;</span> 测试表
+    <span class="c-gray en">&gt;</span> 测试表
+    <a class="btn btn-success radius r" style="line-height:1.6em;margin-top:3px" href="javascript:location.replace(location.href);" title="刷新" ><i class="Hui-iconfont">&#xe68f;</i></a>
+</nav>
+
+<div class="page-container">
+
+    <div class="cl pd-5 bg-1 bk-gray mt-20">
+        <span class="l">
+            <a href="javascript:;" id='batchDelete' class="btn btn-danger radius">
+                <i class="Hui-iconfont">&#xe6e2;</i> 批量删除
+            </a>
+            <a id="add" href="#" class="btn btn-primary radius">
+                <i class="Hui-iconfont">&#xe600;</i> 添加数据
+            </a>
+        </span>
+        <span class="r">共有数据：<strong id='data_num'></strong> 条</span>
+    </div>
+    
+    <table class="table table-border table-bordered table-bg">
+        <thead>
+            <tr>
+                <th scope="col" colspan="5"></th>
+            </tr>
+            <tr class="text-c">
+                <th></th>
+<th id='id'>自增id</th><th id='aaa'>aaa</th><th id='bbb'>bbb</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id='dataRoom'>
+        </tbody>
+    </table>
+</div>
+{include file="public/_footer" /}
+<script src="/assets/js/admin/admin.command.js"></script>
+<script src="/assets/js/generate/test/test.js"></script>
+
+</body>
+</html>
