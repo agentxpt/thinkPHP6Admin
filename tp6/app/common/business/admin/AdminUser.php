@@ -11,9 +11,26 @@
 
 namespace app\common\business\admin;
 use app\common\model\mysql\admin\AdminUser as AdminUserModel;
+use think\facade\Db;
 
 class AdminUser{
 
+
+    public function getLoginInfo(){
+        $user = session(config('admin.session_user'));
+        $group = Db::table('z_admin_auth_access')->where('username', $user)->find();
+        $group_name = Db::table('z_admin_auth_group')->where('id', $group['group'])->find();
+        $data = [];
+        $data['username'] = $user;
+        $data['group'] = $group_name['name'];
+        $data['group_id'] = $group_name['rules'];
+        return $data;
+    }
+    /**更新登陆信息
+     * @param $data
+     * @param $key
+     * @return string
+     */
     public function updateLoginInfo($data, $key){
 
         $execute = new AdminUserModel();
@@ -51,7 +68,7 @@ class AdminUser{
         ];
 
         $this -> updateLoginInfo($loginTimeAndIp, $data["username"]);
-        session(config('admin.session_user'), $data["username"], config('admin.session_user_scope'));
+        session(config('admin.session_user'), $data["username"]);
 
         return config("status.success");
     }

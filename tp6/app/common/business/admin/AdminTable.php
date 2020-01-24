@@ -12,11 +12,27 @@
 namespace app\common\business\admin;
 
 
+use think\db\exception\DbException;
 use think\facade\App;
 use think\facade\Db;
 
 class AdminTable{
 
+    public function generateInfo($tableName, $tableComment, $path, $user){
+        try {
+            $isExist = Db::name('z_admin_generator') -> where('table_name', $tableName) -> find();
+            $data['table_name'] = $tableName;
+            $data['table_comment'] = $tableComment;
+            $data['catalogue_bind'] = $path;
+            $data['executor'] = $user;
+            if($isExist == NULL){
+                return Db::name('z_admin_generator')->strict(false)->insert($data);
+            }
+            return Db::name('z_admin_generator') -> where('table_name', $tableName) -> data($data) -> update();
+        }catch (DbException $exception){
+            return $exception -> getMessage();
+        }
+    }
 
     public function generateJS($tableName){
 
@@ -26,8 +42,8 @@ class AdminTable{
         if(file_exists(App::getRootPath()."public/assets/js/generate/".$tableName."/".$tableName.".js")){
             unlink(App::getRootPath()."public/assets/js/generate/".$tableName."/".$tableName.".js");
         }
-        if(file_exists(App::getRootPath()."public/assets/js/generate/".$tableName."/add_edit.js")){
-            unlink(App::getRootPath()."public/assets/js/generate/".$tableName."/add_edit.js");
+        if(file_exists(App::getRootPath()."public/assets/js/generate/".$tableName."/admin.catalogue.add.edit.js")){
+            unlink(App::getRootPath()."public/assets/js/generate/".$tableName."/admin.catalogue.add.edit.js");
         }
         if(!is_dir(App::getRootPath()."public/assets/js/generate/".$tableName)){
             mkdir(iconv("UTF-8", "GBK", App::getRootPath()."public/assets/js/generate/".$tableName),0777,true);
@@ -38,7 +54,7 @@ class AdminTable{
         $template = $this -> templateJS($tableName, $allField);
         file_put_contents(App::getRootPath()."public/assets/js/generate/".$tableName."/".$tableName.".js", $template, FILE_APPEND | LOCK_EX);
         $template = $this -> templateAddEditJS($tableName, $allField);
-        file_put_contents(App::getRootPath()."public/assets/js/generate/".$tableName."/add_edit.js", $template, FILE_APPEND | LOCK_EX);
+        file_put_contents(App::getRootPath()."public/assets/js/generate/".$tableName."/add.edit.js", $template, FILE_APPEND | LOCK_EX);
 
         return 1;
     }
@@ -125,7 +141,18 @@ class AdminTable{
 
         $lower = $tableName;
         $upper = ucwords($tableName);
-$template1 = "
+        $str1 = '';$str2 = '';$str3 = '';
+        foreach ($allField as $key){
+            $str1 .= "$('#".$key['Field']."').val(res.result[0]['".$key['Field']."']);";
+        }
+        foreach ($allField as $key){
+            $str2 .= "var ".$key['Field']." = $('#".$key['Field']."').val();";
+        }
+        foreach ($allField as $key){
+            $str3 .= $key['Field'].":".$key['Field'].",";
+        }
+        $str3 = rtrim($str3, ',');
+return "
 $(document).ready(function() {
 
     var url = location.search; //获取url中\"?\"符后的字串
@@ -139,58 +166,60 @@ $(document).ready(function() {
         }
     }
     var target=theRequest.id;
-    $.ajax({
-        type : \"POST\",
-        contentType : \"application/x-www-form-urlencoded\",
-        url : \"/admin/$upper/retrieveData\",
-        data : {
-            key:'id',
-            value:target
-        },
-        success : function(res) {
-";
-$template2 = "
-        }
-    });
-    
-    $(\"#commit\").click(function() {
-";
-$template3 = "
-        var aaa = $(\"#aaa\").val();
-        var bbb = $(\"#bbb\").val();
-
+    if(target != -1){
         $.ajax({
             type : \"POST\",
-            contentType: \"application/x-www-form-urlencoded\",
-            url : \"/admin/$upper/updateData\",
+            contentType : \"application/x-www-form-urlencoded\",
+            url : \"/admin/$upper/retrieveData\",
             data : {
-                target:target,
-";
-$template4 = "
+                key:'id',
+                value:target
             },
             success : function(res) {
-                if(res.status == 200){
-                    window.parent.location.reload();
-                }
+                $str1
             }
         });
-    })
+    
+        $(\"#commit\").click(function() {
+            $str2
 
+            $.ajax({
+                type : \"POST\",
+                contentType: \"application/x-www-form-urlencoded\",
+                url : \"/admin/$upper/updateData\",
+                data : {
+                    target:target,
+                    $str3
+                },
+                success : function(res) {
+                    if(res.status == 200){
+                        window.parent.location.reload();
+                    }
+                }
+            });
+        })
+    }
+    if(target == -1){
+        $(\"#commit\").click(function() {
+            $str2
+            $.ajax({
+                type : \"POST\",
+                contentType: \"application/x-www-form-urlencoded\",
+                url : \"/admin/$upper/createData\",
+                data : {
+                    $str3
+                },
+                success : function(res) {
+                    if(res.status == 200){
+                        window.parent.location.reload();
+                    }
+                }
+            });
+        })
+    }
 })
 
 ";
-        $str1 = '';$str2 = '';$str3 = '';
-        foreach ($allField as $key){
-            $str1 .= "$('#".$key['Field']."').val(res.result[0]['".$key['Field']."']);";
-        }
-        foreach ($allField as $key){
-            $str2 .= "var ".$key['Field']." = $('#".$key['Field']."').val();";
-        }
-        foreach ($allField as $key){
-            $str3 .= $key['Field'].":".$key['Field'].",";
-        }
-        $str3 = rtrim($str3, ',');
-        return $template1.$str1.$template2.$str2.$template3.$str3.$template4;
     }
 
     /**JS
@@ -201,8 +230,12 @@ $template4 = "
     public function templateJS($tableName, $allField){
         $lower = $tableName;
         $upper = ucwords($tableName);
+        $str = '';
+        foreach ($allField as $key){
+            $str .= "\"<td>\"+key['".$key['Field']."']+\"</td>\" +";
+        }
 
-$template1 = "
+return "
 $(document).ready(function(){
 
     $(document).ready(function(){
@@ -213,16 +246,18 @@ $(document).ready(function(){
             url : \"/admin/$upper/seeAll\",
             success : function(res) {
                 var i = 1;
+                $(\"#data_num\").append(
+                    \"<strong>\"+res.result.length+\"</strong>\"
+                );
                 for(let key of res.result){
 
                     $(\"#dataRoom\").append(
                         \"<tr>\" +
-                            \"<td>\"+i+\"</td>>\" +
-";
-$template2 = "
+                            \"<td><input type='checkbox' name='multiple' value=\"+key['id']+\"></td>>\" +
+                            $str
                             \"<td class='td-manage'>\" +
                                 \"<span class='label label - success radius'><a onClick='edit(\"+key['id']+\")'>编辑</a></span>\" +
-                                \"<span class='label radius'><a id='delete\"+key['id']+\"' href='#'>删除</a></span>\" +
+                                \"<span class='label radius'><a onClick='delete_single(\"+key['id']+\")'>删除</a></span>\" +
                             \"</td>\" +
                         \"</tr>\"
                     );
@@ -233,21 +268,55 @@ $template2 = "
         });
 
     });
+    $(\"#add\").click(function(){
+        layer_show('代码生成','/admin/$upper/viewAddEdit?id=-1',800,500);
+    })
+    $(\"#batchDelete\").click(function(){
+        var ids = [], i = 1;
+        $(\"input[name='multiple']:checked\").each(function(index, key){
+            ids[i] = $(key).val();
+            i++;
+        });
+
+        $.ajax({
+            type : \"POST\",
+            contentType: \"application/x-www-form-urlencoded\",
+            url : \"/admin/$upper/batchDeleteData\",
+            data : {
+                ids:ids
+            },
+            success : function(res) {
+                if(res.status == 200){
+                    location.replace(document.referrer);
+                }
+            }
+        });
+    })
 });
 
 function edit(id) {
-
     layer_show('代码生成','/admin/$upper/viewAddEdit?id='+id,800,500);
+}
+
+function delete_single(id) {
+
+    $.ajax({
+        type : \"POST\",
+        contentType: \"application/x-www-form-urlencoded\",
+        url : \"/admin/$upper/deleteData\",
+        data : {
+            target:id
+        },
+        success : function(res) {
+            if(res.status == 200){
+                location.replace(document.referrer);
+            }
+        }
+    });
 
 }
 
-
 ";
-        $str = '';
-        foreach ($allField as $key){
-            $str .= "\"<td>\"+key['".$key['Field']."']+\"</td>\" +";
-        }
-        return $template1.$str.$template2;
     }
 
     /**添加编辑视图
@@ -255,30 +324,6 @@ function edit(id) {
      * @return string
      */
     public function templateAddEdit($tableName, $allField){
-
-$template1 = "
-<!DOCTYPE HTML>
-<html>
-<head>
-	{include file=\"public/_meta\" /}
-</head>
-<body>
-<article class=\"page-container\">
-	<form class=\"form form-horizontal\" id=\"form-admin-add\">
-";
-$template2 = "
-	    <div class=\"row cl\">
-		    <div class=\"col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-3\">
-			    <input id='commit' class=\"btn btn-primary radius\" type=\"button\" value=\"&nbsp;&nbsp;提交&nbsp;&nbsp;\">
-		    </div>
-	    </div>
-	</form>
-</article>
-{include file=\"public/_footer\" /}
-<script src=\"/assets/js/generate/$tableName/add_edit.js\"></script>
-</body>
-</html>
-";
         $str = '';
         foreach ($allField as $field){
             $str .= "
@@ -290,7 +335,29 @@ $template2 = "
 	        </div>
             ";
         }
-        return $template1.$str.$template2;
+
+return "
+<!DOCTYPE HTML>
+<html>
+<head>
+	{include file=\"public/_meta\" /}
+</head>
+<body>
+<article class=\"page-container\">
+	<form class=\"form form-horizontal\" id=\"form-admin-add\">
+	    $str
+	    <div class=\"row cl\">
+		    <div class=\"col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-3\">
+			    <input id='commit' class=\"btn btn-primary radius\" type=\"button\" value=\"&nbsp;&nbsp;提交&nbsp;&nbsp;\">
+		    </div>
+	    </div>
+	</form>
+</article>
+{include file=\"public/_footer\" /}
+<script src=\"/assets/js/generate/$tableName/add.edit.js\"></script>
+</body>
+</html>
+";
     }
 
     /**视图模版
@@ -303,7 +370,11 @@ $template2 = "
     public function templateView($fieldNum, $title, $allField, $tableName){
 
         $fieldNum += 2;
-$template1 = "
+        $str = '';
+        foreach ($allField as $field){
+            $str .= "<th id='".$field['Field']."'>".$field['Comment']."</th>";
+        }
+return "
 <!DOCTYPE html>
 <html lang=\"en\">
 <head>
@@ -313,8 +384,7 @@ $template1 = "
 
 <nav class=\"breadcrumb\">
     <i class=\"Hui-iconfont\">&#xe67f;</i> 首页
-    <span class=\"c-gray en\">&gt;</span> 测试表
-    <span class=\"c-gray en\">&gt;</span> 测试表
+    <span class=\"c-gray en\">&gt;</span> $title
     <a class=\"btn btn-success radius r\" style=\"line-height:1.6em;margin-top:3px\" href=\"javascript:location.replace(location.href);\" title=\"刷新\" ><i class=\"Hui-iconfont\">&#xe68f;</i></a>
 </nav>
 
@@ -322,7 +392,7 @@ $template1 = "
 
     <div class=\"cl pd-5 bg-1 bk-gray mt-20\">
         <span class=\"l\">
-            <a href=\"javascript:;\" id='batchDelete' class=\"btn btn-danger radius\">
+            <a id='batchDelete' href=\"#\" class=\"btn btn-danger radius\">
                 <i class=\"Hui-iconfont\">&#xe6e2;</i> 批量删除
             </a>
             <a id=\"add\" href=\"#\" class=\"btn btn-primary radius\">
@@ -339,8 +409,7 @@ $template1 = "
             </tr>
             <tr class=\"text-c\">
                 <th></th>
-";
-$template2 = "
+                $str
                 <th>操作</th>
             </tr>
         </thead>
@@ -349,17 +418,11 @@ $template2 = "
     </table>
 </div>
 {include file=\"public/_footer\" /}
-<script src=\"/assets/js/admin/admin.command.js\"></script>
 <script src=\"/assets/js/generate/$tableName/$tableName.js\"></script>
 
 </body>
 </html>
 ";
-        $str = '';
-        foreach ($allField as $field){
-            $str .= "<th id='".$field['Field']."'>".$field['Comment']."</th>";
-        }
-        return $template1.$str.$template2;
     }
 
     /**控制器模版
@@ -390,6 +453,9 @@ class $upper extends BaseMethod {
     }
 
     public function retrieveData(){
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
         \$key = \$this -> request -> param(\"key\", '', 'trim');
         \$value = \$this -> request -> param(\"value\", '', 'trim');
         return \$this -> show(
@@ -400,6 +466,9 @@ class $upper extends BaseMethod {
     }
     
     public function updateData(){
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
         \$id = \$this -> request -> param(\"target\", '', 'trim');
         \$data = \$this -> request -> param([$str]);
         \$backInfo = \$this -> Update('$origin', \$id ,\$data);
@@ -411,6 +480,9 @@ class $upper extends BaseMethod {
     }
     
     public function deleteData(){
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
         \$id = \$this -> request -> param(\"target\", '', 'trim');
         return \$this -> show(
             config(\"status.success\"),
@@ -420,6 +492,9 @@ class $upper extends BaseMethod {
     }
     
     public function createData(){
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
         \$data = \$this -> request -> param();
         \$backInfo = \$this -> Create('$origin', \$data);
         if(\$backInfo == 1){
@@ -437,6 +512,9 @@ class $upper extends BaseMethod {
     }
     
     public function seeAll(){
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
         return \$this -> show(
             config(\"status.success\"),
             config(\"message.success\"),
@@ -445,7 +523,10 @@ class $upper extends BaseMethod {
     }
     
     public function batchDeleteData(){
-        \$ids = \$this -> request -> param();
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
+        \$ids = \$this -> request -> param(\"ids\", '', 'trim');
         return \$this -> show(
             config(\"status.success\"),
             config(\"message.success\"),

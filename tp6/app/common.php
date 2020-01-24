@@ -18,3 +18,15 @@ function show_error($status, $message = '错误', $data, $HttpStatus = 200){
     ];
     return json($result, $HttpStatus);
 }
+
+function back_admin_login(){
+    return redirect('/admin/login');
+}
+
+function back_admin_index(){
+    return redirect('/admin/Index');
+}
+
+function back_error(){
+    return redirect('/admin/AdminBaseAccess/errorView');
+}

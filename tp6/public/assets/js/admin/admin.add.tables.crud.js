@@ -10,7 +10,20 @@ $(document).ready(function(){
                 for (let key of res.result){
 
                     $("#tables_name").append(
-                        "<option id='key['Tables_in_tp6']'>"+key['Tables_in_tp6']+"</option>"
+                        "<option>"+key['Tables_in_tp6']+"</option>"
+                    );
+                }
+            }
+        });
+
+        $.ajax({
+            type : "POST",
+            contentType : "application/x-www-form-urlencoded",
+            url : "/admin/AdminCatalogue/seeAll",
+            success : function(res) {
+                for (let key of res.result){
+                    $("#catalogue").append(
+                        "<option value="+key['id']+">"+key['catalogue_name']+"</option>"
                     );
                 }
             }
@@ -21,15 +34,19 @@ $(document).ready(function(){
     $("#send").click(function(){
 
         var tableName = $("#tables_name").val();
+        var catalogue = $("#catalogue").val();
         $.ajax({
             type : "POST",
             contentType : "application/x-www-form-urlencoded",
             url : "/admin/AdminTable/codeGenerator",
             data : {
-                tableName:tableName
+                tableName:tableName,
+                catalogue:catalogue
             },
             success : function(res) {
-                console.log(res);
+                if(res.status == 200){
+                    window.parent.location.reload();
+                }
             }
         });
 

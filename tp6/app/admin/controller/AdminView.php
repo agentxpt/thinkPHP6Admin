@@ -18,44 +18,10 @@ use think\facade\View;
 class AdminView extends BaseController {
 
 
-
-    /**管理员登陆
-     * @return string
-     * @throws \Exception
-     */
-    public function adminLogin(){
-        $this -> isLogin();
-        return View::fetch('index/login');
-    }
-
-    /**后台管理主页
-     * @return string
-     * @throws \Exception
-     */
-    public function indexView(){
-        return View::fetch('index/index');
-    }
-
-    /**后台欢迎页
-     * @return string
-     * @throws \Exception
-     */
-    public function indexWelcome(){
-        return View::fetch('index/welcome');
-    }
-
-    /**添加管理员
-     * @return string
-     * @throws \Exception
-     */
     public function userAdd(){
         return View::fetch('user/add');
     }
 
-    /**在线命令视图
-     * @return string
-     * @throws \Exception
-     */
     public function commandView(){
         return View::fetch('command/command');
     }
@@ -64,14 +30,14 @@ class AdminView extends BaseController {
         return View::fetch('command/add_table_crud');
     }
 
-    /**
-     * 判断是否登陆
-     */
-    public function isLogin(){
-        $user = session(config('admin.session_user'));
-
-        if(!empty($user)){
-            return header('location:/admin/adminIndex');
-        }
+    public function catalogueView(){
+        return View::fetch('catalogue/catalogue');
     }
+
+    public function catalogueAddEdit(){
+        return View::fetch('catalogue/add_edit');
+    }
+
+
+
 }

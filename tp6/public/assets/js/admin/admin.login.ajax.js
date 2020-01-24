@@ -8,7 +8,7 @@ $(document).ready(function(){
         $.ajax({
             type : "POST",
             contentType : "application/x-www-form-urlencoded",
-            url : "/admin/AdminUser/adminLogin",
+            url : "/admin/AdminBaseAccess/adminLogin",
             data : {
                 username:username,
                 password:password,
@@ -24,7 +24,7 @@ $(document).ready(function(){
                     $("#captcha").attr('src',"/captcha?id=" + Math.random());
 
                 }else if(res.status == 200){
-                    $(window).attr('location','adminIndex');
+                    $(window).attr('location','/admin/Index');
                 }
 
             }

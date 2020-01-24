@@ -13,6 +13,9 @@ class Test extends BaseMethod {
     }
 
     public function retrieveData(){
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
         $key = $this -> request -> param("key", '', 'trim');
         $value = $this -> request -> param("value", '', 'trim');
         return $this -> show(
@@ -23,6 +26,9 @@ class Test extends BaseMethod {
     }
     
     public function updateData(){
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
         $id = $this -> request -> param("target", '', 'trim');
         $data = $this -> request -> param(['id','aaa','bbb']);
         $backInfo = $this -> Update('test', $id ,$data);
@@ -34,6 +40,9 @@ class Test extends BaseMethod {
     }
     
     public function deleteData(){
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
         $id = $this -> request -> param("target", '', 'trim');
         return $this -> show(
             config("status.success"),
@@ -43,6 +52,9 @@ class Test extends BaseMethod {
     }
     
     public function createData(){
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
         $data = $this -> request -> param();
         $backInfo = $this -> Create('test', $data);
         if($backInfo == 1){
@@ -60,6 +72,9 @@ class Test extends BaseMethod {
     }
     
     public function seeAll(){
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
         return $this -> show(
             config("status.success"),
             config("message.success"),
@@ -68,7 +83,10 @@ class Test extends BaseMethod {
     }
     
     public function batchDeleteData(){
-        $ids = $this -> request -> param();
+        if(!(request()->isPost())){
+            return back_admin_index();
+        }
+        $ids = $this -> request -> param("ids", '', 'trim');
         return $this -> show(
             config("status.success"),
             config("message.success"),

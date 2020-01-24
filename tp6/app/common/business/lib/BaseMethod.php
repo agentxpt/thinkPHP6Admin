@@ -87,7 +87,7 @@ class BaseMethod extends BaseController {
      */
     public function batchDelete($tableName, $ids){
         try {
-            foreach ($ids as $id){
+            foreach ($ids as $id) {
                 Db::table($tableName)->where('id',$id)->delete();
             }
         }catch (DbException $exception){

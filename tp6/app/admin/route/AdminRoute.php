@@ -1,5 +1,5 @@
 <?php
 use think\facade\Route;
 
-Route::rule('adminIndex', 'AdminView/indexView', 'GET');
-Route::rule('login', 'AdminView/adminLogin', 'GET');
+Route::rule('Index', '/admin/AdminBaseAccess/indexView', 'GET');
+Route::rule('login', '/admin/AdminBaseAccess/adminUserLogin', 'GET');

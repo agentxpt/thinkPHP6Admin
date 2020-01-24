@@ -13,74 +13,14 @@ namespace app\admin\controller;
 
 
 use app\BaseController;
-use think\exception\ValidateException;
-use app\common\validate\admin\AdminLogin;
 use app\common\business\admin\AdminUser as AdminUserBusiness;
 use app\common\validate\admin\AdminUser as AdminUserValidate;
 
 
 class AdminUser extends BaseController {
 
-    public function adminQuit(){
-//        halt(session(config('admin.session_user')));
-        session(NULL, config('admin.session_user_scope'));
-        return redirect('/admin/login');
-    }
-
-    /**管理员登陆
-     * @return string|\think\response\Json
-     * @throws \Exception
-     *
-     */
-    public function adminLogin(){
-
-        if(!(request()->isPost())){
-            return redirect('/admin/login');
-        }
-        $data["username"] = $this -> request -> param("username", '', 'trim');
-        $data["password"] = $this -> request -> param("password", '', 'trim');
-        $data["validate"] = $this -> request -> param("validate", '', 'trim');
-
-        try{
-            validate(AdminLogin::class) -> check($data);
-        }catch (ValidateException $exception){
-
-            $judge = $exception -> getMessage();
-            //为空或验证码错误
-            return $this -> show(
-                config("status.error"),
-                config("message.error"),
-                $judge
-            );
-        }
-        $adminUserBusiness = new AdminUserBusiness();
-        $result = $adminUserBusiness -> adminLogin($data);
-
-        if($result == NULL){
-            //用户不存在
-            return $this -> show(
-                config("status.error"),
-                config("message.error"),
-                config("message.user_not_exist")
-            );
-        }else if($result == config("status.failed")){
-            //密码错误
-            return $this -> show(
-                config("status.error"),
-                config("message.failed"),
-                config("message.password_fault")
-            );
-        }else if($result == config("status.success")){
-            //登陆成功
-            return $this -> show(
-                config("status.success"),
-                config("message.success"),
-                $result
-            );
-        }
 
 
-    }
 
     /**添加管理员
      * @return string|\think\response\Json
@@ -89,7 +29,7 @@ class AdminUser extends BaseController {
     public function addAdminUser(){
 
         if(!(request()->isPost())){
-            return redirect('/admin/adminIndex');
+            return back_admin_index();
         }
         //数据获取
         $data["username"] = $this -> request -> param("username", '', 'trim');

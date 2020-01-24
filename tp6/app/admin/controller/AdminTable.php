@@ -18,7 +18,7 @@ class AdminTable extends BaseController {
 
     public function getAllTable(){
         if(!(request()->isPost())){
-            return redirect('/admin/adminIndex');
+            return back_admin_index();
         }
         $adminTableBusiness = new AdminTableBusiness();
         return $this -> show(
@@ -32,9 +32,10 @@ class AdminTable extends BaseController {
     public function codeGenerator(){
 
         if(!(request()->isPost())){
-//            return redirect('/admin/adminIndex');
+            return back_admin_index();
         }
         $tableName = $this -> request -> param("tableName", '', 'trim');
+        $path = $this -> request -> param("catalogue", '', 'trim');
 
         if($tableName == NULL){
             return $this -> show(
@@ -47,10 +48,19 @@ class AdminTable extends BaseController {
         $isSuccessController = $adminTableBusiness -> generateController($tableName);
         $isSuccessView = $adminTableBusiness -> generateView($tableName);
         $isSuccessJS = $adminTableBusiness -> generateJS($tableName);
-
+        if($isSuccessController && $isSuccessView && $isSuccessJS){
+            $user = session(config('admin.session_user'));
+            $tableComment = $adminTableBusiness -> getTableComment($tableName);
+            $tableComment = $tableComment[0]['Comment'];
+            return $this -> show(
+                config("status.success"),
+                config("message.success"),
+                $adminTableBusiness -> generateInfo($tableName, $tableComment, $path, $user)
+            );
+        }
         return $this -> show(
-            config("status.success"),
-            config("message.success"),
+            config("status.failed"),
+            config("message.failed"),
             NULL
         );
     }

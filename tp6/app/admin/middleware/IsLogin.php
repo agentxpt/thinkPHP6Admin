@@ -17,8 +17,7 @@ class IsLogin{
         $isLogin = (!preg_match('/login/', $request -> pathinfo()) && !preg_match('/adminLogin/', $request -> pathinfo()));
 
         if(empty($user) && $isLogin){
-
-            return redirect('/admin/login');
+            return back_admin_login();
         }
 
 
